@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Пепельный Путь — прототип</title>
+<style>
+:root{--bg:#111714;--panel:#1b2420;--panel2:#252f29;--line:#4a584e;--text:#e7e0c8;--muted:#a7ad9f;--accent:#d8a84e;--danger:#a94c42;--ok:#5e8b63}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:#090d0b;color:var(--text);font-family:system-ui,-apple-system,Segoe UI,sans-serif;height:100%;overflow:hidden}
+body{background:radial-gradient(circle at 30% 10%,#253029 0,#111713 35%,#090d0b 100%)}
+#game{height:100dvh;max-width:540px;margin:auto;display:flex;flex-direction:column;border-left:1px solid #2e3832;border-right:1px solid #2e3832;background:#111713}
+header{padding:calc(env(safe-area-inset-top) + 8px) 12px 8px;background:#171f1b;border-bottom:1px solid var(--line)}
+.top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.title{font-weight:900;letter-spacing:1.5px;color:#e5c477;font-size:16px}.day{font-size:12px;color:var(--muted)}
+.bars{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px}.bar{font-size:10px;color:#c9c6b7}
+.track{height:7px;background:#0b0f0d;border:1px solid #3b453f;margin-top:3px}.fill{height:100%}.hp{background:#9a473e}.food{background:#b58b3f}.water{background:#4c7893}
+main{position:relative;flex:1;overflow:hidden}
+.map{position:absolute;inset:0;background:
+linear-gradient(rgba(18,26,21,.22),rgba(18,26,21,.22)),
+repeating-linear-gradient(23deg,transparent 0 36px,rgba(207,194,151,.035) 37px 39px),
+radial-gradient(circle at 72% 22%,#344037 0 4%,transparent 5%),
+radial-gradient(circle at 22% 72%,#313a32 0 5%,transparent 6%),
+#1d2821}
+.road{position:absolute;width:150%;height:44px;background:#343b36;left:-25%;top:48%;transform:rotate(-18deg);border-top:2px dashed #66685e;border-bottom:2px solid #1a201c;box-shadow:0 0 0 4px #252d27}
+.river{position:absolute;width:38px;height:130%;background:#233e48;left:68%;top:-15%;transform:rotate(10deg);opacity:.8}
+.place{position:absolute;width:58px;height:58px;border:1px solid #6c715f;background:#232c26cc;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-direction:column;font-size:23px;box-shadow:0 4px 15px #0008}
+.place small{font-size:8px;color:#d6d0b8;margin-top:2px;text-align:center}.place.active{border:2px solid var(--accent);box-shadow:0 0 18px #d8a84e55}
+#home{left:15%;top:20%}#gas{left:63%;top:31%}#town{left:35%;top:63%}#forest{left:70%;top:72%}
+.player{position:absolute;left:42%;top:44%;width:28px;height:28px;border-radius:50%;background:#d8a84e;border:3px solid #f0d894;box-shadow:0 0 0 5px #0008,0 0 20px #d8a84e55;transition:.7s}
+.log{position:absolute;left:10px;right:10px;bottom:10px;padding:9px 11px;background:#111713e8;border:1px solid #48544c;font-size:11px;color:#c9c7b8;min-height:42px}
+nav{padding:8px 8px calc(env(safe-area-inset-bottom) + 8px);background:#171f1b;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+button{color:var(--text);background:linear-gradient(#2b352e,#202923);border:1px solid #586359;border-radius:3px;min-height:49px;font-weight:700;font-size:11px}button:active{transform:translateY(1px);background:#37433a}.ico{font-size:20px;display:block;margin-bottom:2px}
+.sheet{display:none;position:absolute;z-index:10;inset:10% 8px 8px;background:#18211dcc;border:1px solid #657066;backdrop-filter:blur(8px);padding:12px;overflow:auto}.sheet.show{display:block}
+.sheet h2{margin:0 0 10px;color:#e5c477;font-size:18px}.close{float:right;min-height:32px;padding:4px 10px}
+.item{display:flex;justify-content:space-between;padding:10px 8px;border-bottom:1px solid #3d4841;background:#202923;margin-bottom:4px}.item span:last-child{color:#d7b86a}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:12px}.actions button{min-height:44px}
+.badge{display:inline-block;padding:3px 6px;background:#39443c;color:#c8c3aa;font-size:10px;margin-right:4px}
+</style>
+</head>
+<body>
+<div id="game">
+<header>
+ <div class="top"><div class="title">ПЕПЕЛЬНЫЙ ПУТЬ</div><div class="day" id="clock">День 1 · 08:00</div></div>
+ <div class="bars">
+  <div class="bar">ЗДОРОВЬЕ<div class="track"><div class="fill hp" id="hp" style="width:92%"></div></div></div>
+  <div class="bar">СЫТОСТЬ<div class="track"><div class="fill food" id="food" style="width:74%"></div></div></div>
+  <div class="bar">ВОДА<div class="track"><div class="fill water" id="water" style="width:81%"></div></div></div>
+ </div>
+</header>
+<main>
+ <div class="map">
+  <div class="road"></div><div class="river"></div>
+  <div class="place active" id="home" onclick="travel('home',this)">🏚️<small>Убежище</small></div>
+  <div class="place" id="gas" onclick="travel('gas',this)">⛽<small>Заправка</small></div>
+  <div class="place" id="town" onclick="travel('town',this)">🏢<small>Мёртвый город</small></div>
+  <div class="place" id="forest" onclick="travel('forest',this)">🌲<small>Лес</small></div>
+  <div class="player" id="player"></div>
+ </div>
+ <div class="log" id="log">Ты очнулся в старом убежище. В рюкзаке почти ничего. Выбери точку на карте.</div>
+
+ <section class="sheet" id="inventory">
+  <button class="close" onclick="toggle('inventory')">✕</button><h2>Рюкзак</h2>
+  <div class="item"><span>🥫 Консервы</span><span id="cans">2</span></div>
+  <div class="item"><span>💧 Вода</span><span id="bottles">2</span></div>
+  <div class="item"><span>🩹 Бинт</span><span>1</span></div>
+  <div class="item"><span>🔩 Металлолом</span><span id="scrap">3</span></div>
+  <div class="actions"><button onclick="eat()">Съесть консервы</button><button onclick="drink()">Выпить воду</button></div>
+ </section>
+
+ <section class="sheet" id="survival">
+  <button class="close" onclick="toggle('survival')">✕</button><h2>Выживание</h2>
+  <span class="badge">Уровень 1</span><span class="badge">Опыт 0 / 100</span>
+  <div class="item"><span>Сила</span><span>3</span></div><div class="item"><span>Ловкость</span><span>4</span></div>
+  <div class="item"><span>Выживание</span><span>2</span></div><div class="item"><span>Радиация</span><span>0%</span></div>
+ </section>
+
+ <section class="sheet" id="craft">
+  <button class="close" onclick="toggle('craft')">✕</button><h2>Изготовление</h2>
+  <div class="item"><span>🔪 Самодельный нож<br><small>5 металлолома</small></span><button onclick="craftKnife()">Создать</button></div>
+  <div class="item"><span>🔥 Костёр<br><small>3 дерева</small></span><button onclick="msg('Нужно найти древесину.')">Создать</button></div>
+ </section>
+</main>
+<nav>
+ <button onclick="toggle('inventory')"><span class="ico">🎒</span>РЮКЗАК</button>
+ <button onclick="searchArea()"><span class="ico">🔎</span>ОБЫСК</button>
+ <button onclick="toggle('craft')"><span class="ico">🛠️</span>КРАФТ</button>
+ <button onclick="toggle('survival')"><span class="ico">☢️</span>ГЕРОЙ</button>
+</nav>
+</div>
+<script>
+let s={hour:8,day:1,hp:92,food:74,water:81,cans:2,bottles:2,scrap:3,loc:'home'};
+const pos={home:[42,44],gas:[64,39],town:[43,66],forest:[72,73]};
+const names={home:'убежище',gas:'заброшенную заправку',town:'мёртвый город',forest:'лес'};
+function clamp(x){return Math.max(0,Math.min(100,x))}
+function render(){
+ document.getElementById('hp').style.width=s.hp+'%';document.getElementById('food').style.width=s.food+'%';document.getElementById('water').style.width=s.water+'%';
+ document.getElementById('cans').textContent=s.cans;document.getElementById('bottles').textContent=s.bottles;document.getElementById('scrap').textContent=s.scrap;
+ document.getElementById('clock').textContent=`День ${s.day} · ${String(s.hour).padStart(2,'0')}:00`;
+}
+function time(n){s.hour+=n;while(s.hour>=24){s.hour-=24;s.day++}s.food=clamp(s.food-n*2);s.water=clamp(s.water-n*3);if(!s.food||!s.water)s.hp=clamp(s.hp-5);render()}
+function msg(t){document.getElementById('log').textContent=t}
+function travel(k,el){
+ document.querySelectorAll('.place').forEach(x=>x.classList.remove('active'));el.classList.add('active');s.loc=k;
+ let p=pos[k],pl=document.getElementById('player');pl.style.left=p[0]+'%';pl.style.top=p[1]+'%';time(2);msg(`Ты добрался в ${names[k]}. Потрачено 2 часа. Здесь можно провести обыск.`);
+}
+function searchArea(){
+ time(1);let r=Math.random();
+ if(r<.32){s.scrap+=2;msg('Обыск завершён: найдено 2 металлолома.');}
+ else if(r<.56){s.cans++;msg('В старом шкафу нашлась банка консервов.');}
+ else if(r<.76){s.bottles++;msg('Удача: найдена бутылка чистой воды.');}
+ else{ s.hp=clamp(s.hp-8);msg('Шум привлёк заражённого. Ты отбился, но потерял 8 здоровья.');}
+ render()
+}
+function toggle(id){document.querySelectorAll('.sheet').forEach(x=>{if(x.id!==id)x.classList.remove('show')});document.getElementById(id).classList.toggle('show')}
+function eat(){if(s.cans<1)return msg('Консервы закончились.');s.cans--;s.food=clamp(s.food+28);render();msg('Ты поел. Сытость восстановлена.')}
+function drink(){if(s.bottles<1)return msg('Вода закончилась.');s.bottles--;s.water=clamp(s.water+35);render();msg('Ты выпил воду.')}
+function craftKnife(){if(s.scrap<5)return msg('Не хватает металлолома. Нужно 5.');s.scrap-=5;render();msg('Самодельный нож готов. Теперь в бою будет проще.')}
+render();
+</script>
+</body>
+</html>
